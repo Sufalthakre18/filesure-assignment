@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f6fa;
+      padding: 20px;
+    }
+
+    h2, h3 {
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    input {
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .summary {
+      background: #eef3ff;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .pagination {
+      margin-top: 15px;
+    }
+
+    .status-true {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-false {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📊 Company Dashboard</h2>
+
+
+<div>
+  <input id="status" placeholder="Status (Active)">
+  <input id="state" placeholder="State (Maharashtra)">
+  <button onclick="search()">Search</button>
+</div>
+
+<br>
+
+
+<h3>Summary</h3>
+<div class="summary">
+  <ul id="summary"></ul>
+</div>
+
+<br>
+
+<!-- TABLE -->
+<h3>Company List</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+      <th>State</th>
+      <th>Email</th>
+    </tr>
+  </thead>
+  <tbody id="data"></tbody>
+</table>
+
+<!-- PAGINATION -->
+<div class="pagination">
+  <button onclick="prevPage()">Prev</button>
+  <span id="pageInfo"></span>
+  <button onclick="nextPage()">Next</button>
+</div>
+
+</div>
+
+<script>
+let page = 1;
+let currentStatus = "";
+let currentState = "";
+
+async function load() {
+  let url = `http://localhost:5000/companies?page=${page}&limit=10`;
+
+  if (currentStatus) url += `&status=${currentStatus}`;
+  if (currentState) url += `&state=${currentState}`;
+
+  const res = await fetch(url);
+  const result = await res.json();
+
+  const table = document.getElementById("data");
+  table.innerHTML = "";
+
+  result.data.forEach(c => {
+    table.innerHTML += `
+      <tr>
+        <td>${c.company_name || "-"}</td>
+        <td>${c.status || "-"}</td>
+        <td>${c.state || "-"}</td>
+        <td class="${c.is_email_valid ? 'status-true' : 'status-false'}">
+          ${c.is_email_valid ? "Valid" : "Invalid"}
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("pageInfo").innerText =
+    `Page ${result.page} | Total: ${result.total}`;
+}
+
+async function loadSummary() {
+  const res = await fetch("http://localhost:5000/companies/summary");
+  const data = await res.json();
+
+  const summaryEl = document.getElementById("summary");
+  summaryEl.innerHTML = "";
+
+  data.forEach(item => {
+    summaryEl.innerHTML += `<li><b>${item._id}</b>: ${item.count}</li>`;
+  });
+}
+
+function search() {
+  page = 1;
+  currentStatus = document.getElementById("status").value;
+  currentState = document.getElementById("state").value;
+  load();
+}
+
+function nextPage() {
+  page++;
+  load();
+}
+
+function prevPage() {
+  if (page > 1) {
+    page--;
+    load();
+  }
+}
+
+load();
+loadSummary();
+</script>
+
+</body>
+</html>
